@@ -54,7 +54,7 @@ def set_username(cmdline, username):
 def main():
     process = find_minecraft_process()
     if process is None:
-        print('Could not find Minecraft: Java Edition. Is it running?')
+        print('Could not find a running instance of Minecraft Java Edition. Make sure Minecraft is running, then try again.')
         return
     
     username = input('Enter your fake username: ')
