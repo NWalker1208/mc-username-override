@@ -1,0 +1,10 @@
+# Run "conda env create -f environment.yml" to install this environment.
+name: mc-username-override
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11.4
+  - psutil=5.9.5
+  - pywin32=304
+  - pyinstaller=5.13.0
