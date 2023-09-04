@@ -30,13 +30,15 @@ def restart_process(process: psutil.Process, cmdline: list[str]) -> psutil.Proce
     cwd = process.cwd()
     env = process.environ()
 
+    print('Closing Minecraft...')
     close_windows(process)
     try:
-        process.wait(timeout=10)
+        process.wait(timeout=30)
     except psutil.TimeoutExpired:
         stop_process(process)
 
-    return subprocess.Popen(cmdline, cwd=cwd, env=env)
+    print('Restarting Minecraft...')
+    subprocess.Popen(cmdline, cwd=cwd, env=env, creationflags=subprocess.CREATE_NEW_CONSOLE)
 
 def set_username(cmdline, username):
     return cmdline
@@ -44,15 +46,14 @@ def set_username(cmdline, username):
 def main():
     process = find_minecraft_process()
     if process is None:
-        print('Could not find Minecraft. Is it running?')
+        print('Could not find Minecraft: Java Edition. Is it running?')
         return
     
     username = input('Enter your fake username: ')
     cmdline = set_username(process.cmdline(), username)
 
-    print('Restarting Minecraft...')
-    new_process = restart_process(process, cmdline)
-    pass
+    restart_process(process, cmdline)
+    print('Done!')
 
 if __name__ == '__main__':
     main()
