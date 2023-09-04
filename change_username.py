@@ -1,6 +1,8 @@
 import psutil
-import subprocess
+import os, subprocess
 import win32gui, win32process, win32con
+
+CLOSE_EXISTING_INSTANCE = True
 
 def find_minecraft_process():
     for process in psutil.process_iter(attrs=['pid', 'name']):
@@ -30,14 +32,15 @@ def restart_process(process: psutil.Process, cmdline: list[str]) -> psutil.Proce
     cwd = process.cwd()
     env = process.environ()
 
-    print('Closing Minecraft...')
-    close_windows(process)
-    try:
-        process.wait(timeout=30)
-    except psutil.TimeoutExpired:
-        stop_process(process)
+    if CLOSE_EXISTING_INSTANCE:
+        print('Closing Minecraft...')
+        close_windows(process)
+        try:
+            process.wait(timeout=30)
+        except psutil.TimeoutExpired:
+            stop_process(process)
 
-    print('Restarting Minecraft...')
+    print('Restarting Minecraft...' if CLOSE_EXISTING_INSTANCE else 'Opening Minecraft...')
     subprocess.Popen(cmdline, cwd=cwd, env=env, creationflags=subprocess.CREATE_NEW_CONSOLE)
 
 def set_username(cmdline, username):
@@ -55,12 +58,16 @@ def main():
         return
     
     username = input('Enter your fake username: ')
-    cmdline = set_username(process.cmdline(), username)
-    if cmdline is None:
-        print('Could not figure out how to change the username. This script likely needs to be updated.')
+    cmdline = process.cmdline()
+    modified_cmdline = set_username(process.cmdline(), username)
+    if modified_cmdline is None:
+        with open('report.txt', 'a') as report:
+            report.writelines(arg + '\n' for arg in cmdline)
+        report_path = os.path.abspath('report.txt')
+        print('Could not figure out how to change the username. This script likely needs to be updated. Please send the developer a copy of the report located here: ' + report_path)
         return
 
-    restart_process(process, cmdline)
+    restart_process(process, modified_cmdline)
     print('Done! Minecraft may take a moment to finish opening.')
 
 if __name__ == '__main__':
