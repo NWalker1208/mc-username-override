@@ -1,5 +1,6 @@
 import psutil
 import subprocess
+import win32gui, win32process, win32con
 
 def find_minecraft_process():
     for process in psutil.process_iter(attrs=['pid', 'name']):
@@ -11,6 +12,13 @@ def find_minecraft_process():
     
     return None
 
+def close_windows(process):
+    def callback(hwnd, _):
+        _, window_pid = win32process.GetWindowThreadProcessId(hwnd)
+        if window_pid == process.pid:
+            win32gui.PostMessage(hwnd, win32con.WM_CLOSE, 0, 0)
+    win32gui.EnumWindows(callback, None)
+
 def stop_process(process):
     try:
         process.terminate()
@@ -21,7 +29,13 @@ def stop_process(process):
 def restart_process(process: psutil.Process, cmdline: list[str]) -> psutil.Process:
     cwd = process.cwd()
     env = process.environ()
-    stop_process(process)
+
+    close_windows(process)
+    try:
+        process.wait(timeout=10)
+    except psutil.TimeoutExpired:
+        stop_process(process)
+
     return subprocess.Popen(cmdline, cwd=cwd, env=env)
 
 def set_username(cmdline, username):
