@@ -41,7 +41,12 @@ def restart_process(process: psutil.Process, cmdline: list[str]) -> psutil.Proce
     subprocess.Popen(cmdline, cwd=cwd, env=env, creationflags=subprocess.CREATE_NEW_CONSOLE)
 
 def set_username(cmdline, username):
-    return cmdline
+    try:
+        i = cmdline.index('--username')
+        cmdline[i+1] = username
+        return cmdline
+    except ValueError:
+        return None
 
 def main():
     process = find_minecraft_process()
@@ -51,9 +56,12 @@ def main():
     
     username = input('Enter your fake username: ')
     cmdline = set_username(process.cmdline(), username)
+    if cmdline is None:
+        print('Could not figure out how to change the username. This script likely needs to be updated.')
+        return
 
     restart_process(process, cmdline)
-    print('Done!')
+    print('Done! Minecraft may take a moment to finish opening.')
 
 if __name__ == '__main__':
     main()
