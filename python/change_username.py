@@ -7,8 +7,10 @@ CLOSE_EXISTING_INSTANCE = True
 def find_minecraft_process():
     for process in psutil.process_iter(attrs=['pid', 'name']):
         try:
-            if process.info['name'].lower() == 'javaw.exe' and 'net.minecraft.client.main.Main' in process.cmdline():
-                return process
+            if process.info['name'].lower() == 'javaw.exe':
+                cmdline = process.cmdline()
+                if 'net.minecraft.client.main.Main' in cmdline or 'cpw.mods.bootstraplauncher.BootstrapLauncher' in cmdline:
+                    return process
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             pass
     
