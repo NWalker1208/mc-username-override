@@ -4,12 +4,18 @@ import win32gui, win32process, win32con
 
 CLOSE_EXISTING_INSTANCE = True
 
+MC_MAIN_CLASSES = [
+    'net.minecraft.client.main.Main',
+    'cpw.mods.bootstraplauncher.BootstrapLauncher',
+    'net.fabricmc.loader.impl.launch.knot.KnotClient'
+]
+
 def find_minecraft_process():
     for process in psutil.process_iter(attrs=['pid', 'name']):
         try:
             if process.info['name'].lower() == 'javaw.exe':
                 cmdline = process.cmdline()
-                if 'net.minecraft.client.main.Main' in cmdline or 'cpw.mods.bootstraplauncher.BootstrapLauncher' in cmdline:
+                if any(main_class in cmdline for main_class in MC_MAIN_CLASSES):
                     return process
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             pass
