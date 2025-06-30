@@ -18,7 +18,7 @@ python -m pip install -r requirements.txt
 ```sh
 mkdir build
 magick -background transparent -define 'icon:auto-resize=256,128,96,64,48,32,24,16' icon.svg build/icon.ico
-pyinstaller -D -n "Change Minecraft Username" --icon build/icon.ico change_username.py
+pyinstaller -F -n "Change Minecraft Username" --icon build/icon.ico change_username.py
 ```
 
 The final output will appear in the `dist` directory.
