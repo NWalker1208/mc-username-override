@@ -1,7 +1,7 @@
 # Development Environment
 
 ## Requirements
-- Python 3.11.4 or newer
+- Python 3.13.3 or newer
 - [ImageMagick](https://imagemagick.org/script/download.php)
 
 
