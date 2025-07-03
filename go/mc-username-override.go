@@ -15,6 +15,7 @@ import (
 const (
 	closeExistingInstance = true
 	reportFileName        = "report.txt"
+	creationFlags         = syscall.CREATE_NEW_PROCESS_GROUP | 0x00000008 /* DETACHED_PROCESS */
 )
 
 func main() {
@@ -132,9 +133,11 @@ func restartProcess(p *process.Process, cmdline []string) {
 	cmd := exec.Command(cmdline[0], cmdline[1:]...)
 	cmd.Dir = cwd
 	cmd.Env = env
-	cmd.SysProcAttr.CreationFlags = syscall.CREATE_NEW_PROCESS_GROUP
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		CreationFlags: creationFlags,
+	}
 	err = cmd.Start()
 	if err != nil {
-		log.Println(err)
+		log.Fatal(err)
 	}
 }
