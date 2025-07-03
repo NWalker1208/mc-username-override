@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/shirou/gopsutil/v4/process"
 )
@@ -102,4 +103,38 @@ func setUsername(cmdline []string, username string) []string {
 		}
 	}
 	return nil
+}
+
+func restartProcess(p *process.Process, cmdline []string) {
+	cwd, err := p.Cwd()
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	env, err := p.Environ()
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	if closeExistingInstance {
+		// 	log.Println("Closing Minecraft...")
+		// 	closeWindows(p)
+		// 	err = p.Wait()
+		// 	if err != nil {
+		// 		log.Println(err)
+		// 	}
+		log.Println("Restarting Minecraft...")
+	} else {
+		log.Println("Opening Minecraft...")
+	}
+
+	cmd := exec.Command(cmdline[0], cmdline[1:]...)
+	cmd.Dir = cwd
+	cmd.Env = env
+	cmd.SysProcAttr.CreationFlags = syscall.CREATE_NEW_PROCESS_GROUP
+	err = cmd.Start()
+	if err != nil {
+		log.Println(err)
+	}
 }
