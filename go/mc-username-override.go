@@ -127,12 +127,8 @@ func restartProcess(p *process.Process, cmdline string) {
 	}
 
 	if closeExistingInstance {
-		// 	fmt.Println("Closing Minecraft...")
-		// 	closeWindows(p)
-		// 	err = p.Wait()
-		// 	if err != nil {
-		// 		fmt.Println(err)
-		// 	}
+		fmt.Println("Closing Minecraft...")
+		closeWindows(p)
 		fmt.Println("Restarting Minecraft...")
 	} else {
 		fmt.Println("Opening Minecraft...")
@@ -157,4 +153,8 @@ func restartProcess(p *process.Process, cmdline string) {
 		os.Exit(1)
 	}
 	// TODO: Briefly wait for program to exit before assuming it has started successfully
+}
+
+func closeWindows(p *process.Process) {
+	// TODO
 }
