@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+	"unsafe"
 
 	"github.com/shirou/gopsutil/v4/process"
 )
@@ -155,6 +156,35 @@ func restartProcess(p *process.Process, cmdline string) {
 	// TODO: Briefly wait for program to exit before assuming it has started successfully
 }
 
+var (
+	user32                       = syscall.NewLazyDLL("user32.dll")
+	procEnumWindows              = user32.NewProc("EnumWindows")
+	procGetWindowThreadProcessId = user32.NewProc("GetWindowThreadProcessId")
+	procSendMessageW             = user32.NewProc("SendMessageW")
+	WM_CLOSE                     = 0x0010
+)
+
 func closeWindows(p *process.Process) {
-	// TODO
+	callback := syscall.NewCallback(func(hwnd syscall.Handle, _ uintptr) uintptr {
+		pid := uint32(0)
+		_, _, err := procGetWindowThreadProcessId.Call(uintptr(hwnd), uintptr(unsafe.Pointer(&pid)))
+		if err != nil {
+			return 1
+		}
+
+		if pid == uint32(p.Pid) {
+			_, _, err := procSendMessageW.Call(uintptr(hwnd), uintptr(WM_CLOSE), 0, 0)
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+		}
+		return 1
+	})
+
+	_, _, err := procEnumWindows.Call(callback, 0)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }
