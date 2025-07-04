@@ -151,4 +151,5 @@ func restartProcess(p *process.Process, cmdline string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	// TODO: Briefly wait for program to exit before assuming it has started successfully
 }
