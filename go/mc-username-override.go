@@ -167,24 +167,24 @@ var (
 func closeWindows(p *process.Process) {
 	callback := syscall.NewCallback(func(hwnd syscall.Handle, _ uintptr) uintptr {
 		pid := uint32(0)
-		_, _, err := procGetWindowThreadProcessId.Call(uintptr(hwnd), uintptr(unsafe.Pointer(&pid)))
-		if err != nil {
+		_, _, err := syscall.SyscallN(procGetWindowThreadProcessId.Addr(), uintptr(hwnd), uintptr(unsafe.Pointer(&pid)))
+		if err != 0 {
 			return 1
 		}
 
 		if pid == uint32(p.Pid) {
-			_, _, err := procSendMessageW.Call(uintptr(hwnd), uintptr(WM_CLOSE), 0, 0)
-			if err != nil {
-				fmt.Println(err)
+			_, _, err := syscall.SyscallN(procSendMessageW.Addr(), uintptr(hwnd), uintptr(WM_CLOSE), 0, 0)
+			if err != 0 {
+				fmt.Println(syscall.Errno(err))
 				os.Exit(1)
 			}
 		}
 		return 1
 	})
 
-	_, _, err := procEnumWindows.Call(callback, 0)
-	if err != nil {
-		fmt.Println(err)
+	_, _, err := syscall.SyscallN(procEnumWindows.Addr(), callback, 0)
+	if err != 0 {
+		fmt.Println(syscall.Errno(err))
 		os.Exit(1)
 	}
 }
