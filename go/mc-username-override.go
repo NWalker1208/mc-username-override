@@ -24,7 +24,7 @@ func main() {
 		log.Fatal("Could not find a running instance of Minecraft Java Edition. Make sure Minecraft is running, then try again.")
 	}
 
-	cmdline, err := process.CmdlineSlice()
+	cmdline, err := process.Cmdline()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -61,7 +61,7 @@ func findMinecraftProcess() *process.Process {
 			continue
 		}
 		if strings.ToLower(name) == "javaw.exe" {
-			cmdline, err := process.CmdlineSlice()
+			cmdline, err := process.Cmdline()
 			if err != nil {
 				continue
 			}
@@ -73,17 +73,15 @@ func findMinecraftProcess() *process.Process {
 	return nil
 }
 
-func containsMainClass(cmdline []string) bool {
+func containsMainClass(cmdline string) bool {
 	mainClasses := []string{
 		"net.minecraft.client.main.Main",
 		"cpw.mods.bootstraplauncher.BootstrapLauncher",
 		"net.fabricmc.loader.impl.launch.knot.KnotClient",
 	}
 	for _, mainClass := range mainClasses {
-		for _, arg := range cmdline {
-			if arg == mainClass {
-				return true
-			}
+		if strings.Contains(cmdline, mainClass) {
+			return true
 		}
 	}
 	return false
@@ -96,17 +94,23 @@ func inputUsername() string {
 	return username
 }
 
-func setUsername(cmdline []string, username string) []string {
-	for i, arg := range cmdline {
-		if arg == "--username" {
-			cmdline[i+1] = username
-			return cmdline
-		}
+func setUsername(cmdline string, username string) *string {
+	usernameArgument := "--username"
+	argIndex := strings.Index(cmdline, " "+usernameArgument+" ") + len(usernameArgument) + 2
+	if argIndex == -1 {
+		return nil
 	}
-	return nil
+
+	prevUsernameLen := strings.Index(cmdline[argIndex:], " ")
+	if prevUsernameLen == -1 {
+		prevUsernameLen = len(cmdline[argIndex:])
+	}
+
+	cmdline = cmdline[:argIndex] + username + cmdline[argIndex+prevUsernameLen:]
+	return &cmdline
 }
 
-func restartProcess(p *process.Process, cmdline []string) {
+func restartProcess(p *process.Process, cmdline string) {
 	cwd, err := p.Cwd()
 	if err != nil {
 		log.Fatal(err)
@@ -130,10 +134,17 @@ func restartProcess(p *process.Process, cmdline []string) {
 		log.Println("Opening Minecraft...")
 	}
 
-	cmd := exec.Command(cmdline[0], cmdline[1:]...)
+	// There seems to be a bug in CommandLineToArgv that truncates individual arguments to 8192 characters.
+	// As a workaround, we use the cmdline string directly.
+	cmdNameLen := strings.Index(cmdline, " ")
+	if cmdNameLen == -1 {
+		cmdNameLen = len(cmdline)
+	}
+	cmd := exec.Command(cmdline[:cmdNameLen])
 	cmd.Dir = cwd
 	cmd.Env = env
 	cmd.SysProcAttr = &syscall.SysProcAttr{
+		CmdLine:       cmdline,
 		CreationFlags: creationFlags,
 	}
 	err = cmd.Start()
