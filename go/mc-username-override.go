@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -21,37 +20,42 @@ const (
 func main() {
 	process := findMinecraftProcess()
 	if process == nil {
-		log.Fatal("Could not find a running instance of Minecraft Java Edition. Make sure Minecraft is running, then try again.")
+		fmt.Println("Could not find a running instance of Minecraft Java Edition. Make sure Minecraft is running, then try again.")
+		os.Exit(1)
 	}
 
 	cmdline, err := process.Cmdline()
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	username := inputUsername()
 	modifiedCmdline := setUsername(cmdline, username)
 	if modifiedCmdline == nil {
-		log.Println("Could not figure out how to change the username. This script likely needs to be updated.")
+		fmt.Println("Could not figure out how to change the username. This script likely needs to be updated.")
 		reportPath, err := filepath.Abs(reportFileName)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
+			os.Exit(1)
 		}
-		err = os.WriteFile(reportPath, []byte(strings.Join(cmdline, "\n")), 0644)
+		err = os.WriteFile(reportPath, []byte(cmdline), 0644)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
+			os.Exit(1)
 		}
-		log.Fatal("Please send the developer a copy of the report located here: " + reportPath)
+		fmt.Println("Please send the developer a copy of the report located here: " + reportPath)
+		os.Exit(1)
 	}
 
-	restartProcess(process, modifiedCmdline)
-	log.Println("Done! Minecraft may take a moment to finish opening.")
+	restartProcess(process, *modifiedCmdline)
+	fmt.Println("Done! Minecraft may take a moment to finish opening.")
 }
 
 func findMinecraftProcess() *process.Process {
 	processes, err := process.Processes()
 	if err != nil {
-		log.Println(err)
+		fmt.Println(err)
 		return nil
 	}
 
@@ -113,25 +117,25 @@ func setUsername(cmdline string, username string) *string {
 func restartProcess(p *process.Process, cmdline string) {
 	cwd, err := p.Cwd()
 	if err != nil {
-		log.Fatal(err)
-		return
+		fmt.Println(err)
+		os.Exit(1)
 	}
 	env, err := p.Environ()
 	if err != nil {
-		log.Fatal(err)
-		return
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	if closeExistingInstance {
-		// 	log.Println("Closing Minecraft...")
+		// 	fmt.Println("Closing Minecraft...")
 		// 	closeWindows(p)
 		// 	err = p.Wait()
 		// 	if err != nil {
-		// 		log.Println(err)
+		// 		fmt.Println(err)
 		// 	}
-		log.Println("Restarting Minecraft...")
+		fmt.Println("Restarting Minecraft...")
 	} else {
-		log.Println("Opening Minecraft...")
+		fmt.Println("Opening Minecraft...")
 	}
 
 	// There seems to be a bug in CommandLineToArgv that truncates individual arguments to 8192 characters.
@@ -149,7 +153,8 @@ func restartProcess(p *process.Process, cmdline string) {
 	}
 	err = cmd.Start()
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 	// TODO: Briefly wait for program to exit before assuming it has started successfully
 }
